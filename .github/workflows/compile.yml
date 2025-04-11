@@ -1,0 +1,37 @@
+name: Build IconSvg Plugin
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "PATH=~/theos/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Install ldid
+        run: |
+          curl -LO https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_macosx_arm64
+          chmod +x ldid_macosx_arm64
+          sudo mv ldid_macosx_arm64 /usr/local/bin/ldid
+
+      - name: Build plugin
+        run: |
+          export SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
+          make package FINALPACKAGE=1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IconSvg-Plugin
+          path: packages/*.deb
+          retention-days: 1
